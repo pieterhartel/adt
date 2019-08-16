@@ -1,0 +1,18 @@
+%{
+#include "primitive.h"
+%}
+
+input	= INPUT( string header, body *body, string trailer ) ;
+
+body	= [ def *def ] ;
+def	= DEF( string comment, ident *ident, product *product, adt *adt ) ;
+
+adt	= ADT( sum *sum, string class, product *parameters ) ;
+
+sum	= [ summand *summand ] ;
+summand	= SUMMAND( string comment, ident *ident, product *product ) ;
+
+product	= [ factor *factor ] ;
+factor	= FACTOR( string comment, int visibility, ident *type, string star, ident *field ) ;
+
+ident	= IDENT( string ident ) ;

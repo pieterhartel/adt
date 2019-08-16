@@ -1,0 +1,156 @@
+%{
+#include "primitive.h"
+%}
+
+tree  = /* Base case*/ LEAF ( long val )
+      | /* Recursive case */ BRANCH ( long val, tree *left, tree *right ) ;
+
+temp  = INSTANCE tree (long val) ;
+
+forest  = [ tree *tree ]  ;
+%{
+
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <stdarg.h>
+
+#include "tree.h"
+
+long sum_in( tree *cur ) {
+  long val ;
+  struct tree_struct leaf = inLEAF( &val ) ;
+  if( mttree( &leaf, cur ) ) {
+    return val ;
+  } else {
+    tree *left, *right ;
+    struct tree_struct leftbind = intree( &left ) ;
+    struct tree_struct rightbind = intree( &right ) ;
+    struct tree_struct branch = inBRANCH( &val, &leftbind, &rightbind ) ;
+    if( mttree( &branch, cur ) ) {
+      return val + sum_in( left ) + sum_in( left ) ;
+    }
+  }
+}
+
+long sum_pt( tree *cur ) {
+  long val ;
+  tree *left, *right ;
+  tree *leaf = ptLEAF( bdlong( &val ) ) ;
+  if( !mttree( leaf, cur ) ) {
+    tree *branch = ptBRANCH( bdlong( &val ), bdtree( &left ), bdtree( &right ) ) ;
+    if( mttree( branch, cur ) ) {
+      val = val + sum_pt( left ) + sum_pt( left ) ;
+    }
+    fdtree( &branch ) ;
+  }
+  fdtree( &leaf ) ;
+  return val ;
+}
+
+long sum_cs( tree *cur ) {
+  long val ;
+  tree *left, *right ;
+  switch( gttreetag( cur ) ) {
+  csLEAF( cur, val )
+    return val ;
+  csBRANCH( cur, val, left, right )
+    return val + sum_cs( left ) + sum_cs( right ) ;
+  }
+}
+
+long sum_gt( tree *cur ) {
+  switch( gttreetag( cur ) ) {
+  case LEAF :
+    return gtLEAFval( cur ) ;
+  case BRANCH :
+    return gtBRANCHval( cur ) + sum_gt( gtBRANCHleft( cur ) ) + sum_gt( gtBRANCHright( cur ) ) ;
+  }
+}
+
+long sum_gu( tree *cur ) {
+  if( gttreetag( cur ) == LEAF ) {
+    return gtLEAFval( cur ) ;
+  } else {
+    return gtBRANCHval( cur ) + sum_gu( gtBRANCHleft( cur ) ) + sum_gu( gtBRANCHright( cur ) ) ;
+  }
+}
+
+void free_deep( tree *cur ) {
+  switch( gttreetag( cur ) ) {
+  case LEAF :
+    break ;
+  case BRANCH :
+    free_deep( gtBRANCHleft( cur ) ) ;
+    break ;
+  }
+  frtree( &cur ) ;
+}
+
+typedef struct tree_cc_struct { /* Ker78 p140 */
+  long val;
+  struct tree_cc_struct *left;
+  struct tree_cc_struct *right;
+} tree_cc ;
+
+tree_cc *mkBRANCH_cc( long val, tree_cc *left, tree_cc *right ) {
+  tree_cc *result = calloc( 1, sizeof( struct tree_cc_struct ) ) ;
+  result->val = val ;
+  result->left = left ;
+  result->right = right ;
+  return result ;
+}
+
+long sum_cc( tree_cc *cur ) {
+  if( cur == NULL ) {
+    return 0 ;
+  } else {
+    return cur->val + sum_cc( cur->left ) + sum_cc( cur->right ) ;
+  }
+}
+
+long sum_cd( tree_cc *cur ) {
+  if( cur->left == NULL ) { /* cur->left == NULL <==> cur->right == NULL */
+    return cur->val ;
+  } else {
+    return cur->val + sum_cd( cur->left ) + sum_cd( cur->right ) ;
+  }
+}
+
+void f_tt(void *x, long val) {
+  *(long*)x += val ;
+}
+
+long sum_tt( temp *ntt ) {
+  long s = 0;
+  trtemp(f_tt, &s, ntt);
+  return s ;
+}
+
+int main( int argc, char *argv[] ) {
+  long max = 10 ;
+  tree *nat = mkLEAF( 1 ) ;
+  temp *ntt = mkTEMPLEAF( 1 ) ;
+  tree_cc *nct = mkBRANCH_cc( 1, NULL, NULL ) ;
+  long i ;
+  if( argc == 2 ) {
+    max = (long) strtol( argv[1], NULL, 10 ) ;
+  }
+  for( i = 2 ; i <= max; i++ ) {
+    nat = mkBRANCH( 1, nat, nat ) ;
+    nct = mkBRANCH_cc( 1, nct, nct ) ;
+    ntt = mkTEMPBRANCH( 1, ntt, ntt) ;
+  }
+  if( max < 4 ) {
+    prtree( 1, nat ) ;
+  }
+  printf( "\n%ld\t%ld ", max, sum_tt( ntt ) ) ;
+#ifndef _FAST_
+  printf( "slow\n\n" );
+#else
+  printf( "fast\n\n" );
+#endif
+  free_deep( nat ) ;
+  return 0 ;
+}
+%}
