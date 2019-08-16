@@ -10,3 +10,7 @@ and compares the output to that provided in the tar ball. There should
 not be any differences for the test.
 
 `adt` has been tested under Linux and cygwin. For MacOS change `-lfl` to `-ll` in the Makefile.
+
+See: Pieter H. Hartel and Henk L. Muller (2011), Simple algebraic data types for C,
+Software: Practice and Experience, 42(2):191-210,
+https://doi.org/10.1002/spe.1058
